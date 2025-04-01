@@ -1,3 +1,5 @@
+#include <LiquidCrystal_I2C.h>
+
 /*** Timing Definitions ******/
 #define TIME_1MS_1S  1000
 #define TIME_1S_5S   5
@@ -16,6 +18,8 @@ void setup() {
 Serial.begin(9600);
   pinMode(3, OUTPUT);
   pinMode(2, INPUT_PULLUP);
+  lcd.init(); // Initialize the LCD
+  lcd.backlight(); // Turn on the backlight
 }
 
 void loop() {
@@ -66,4 +70,22 @@ unsigned int CalculateAnalogOut(unsigned int uiInput)
 void SetOutputs()
 {
   analogWrite(3,CalculateAnalogOut(g_uiAnInLightSnsr));
+}
+
+void SetLCDOutput()
+{
+ // Set cursor to the top left corner and print the string on the first row
+lcd.setCursor(0, 0);
+lcd.print(" Hello, world! ");
+// Move to the second row and print the string
+lcd.setCursor(0, 1);
+lcd.print(" IIC/I2C LCD2004 ");
+I2C LCD2004 - Wiki http://wiki.sunfounder.cc/index.php?title=I2C_LCD2004&printable=yes
+4 of 10 3/31/2025, 9:10 PM
+// Move to the third row and print the string
+lcd.setCursor(0, 2);
+lcd.print(" 20 cols, 4 rows ");
+// Move to the fourth row and print the string
+lcd.setCursor(0, 3);
+lcd.print(" www.sunfounder.com "); 
 }
