@@ -1,9 +1,12 @@
 #include <LiquidCrystal_I2C.h>
+#include <Wire.h>
 
 /*** Timing Definitions ******/
 #define TIME_1MS_1S  1000
 #define TIME_1S_5S   5
 
+// Initialize the LCD object, set the LCD I2C address to 0x27 for a 20x4 display
+LiquidCrystal_I2C lcd(0x27, 20, 4);
 
 /***** Global Variables ***********/
 unsigned int g_uiGenericSecondTimer = 0;    //this will keep track of the number of seconds the program has run, until an overflow occurs....
@@ -27,6 +30,7 @@ void loop() {
   UpdateTimers();
   CheckInputs();
   SetOutputs();
+  SetLCDOutput();
    
   if (!g_uiSendMsgTimer)
   { 
@@ -74,18 +78,19 @@ void SetOutputs()
 
 void SetLCDOutput()
 {
- // Set cursor to the top left corner and print the string on the first row
-lcd.setCursor(0, 0);
-lcd.print(" Hello, world! ");
-// Move to the second row and print the string
-lcd.setCursor(0, 1);
-lcd.print(" IIC/I2C LCD2004 ");
-I2C LCD2004 - Wiki http://wiki.sunfounder.cc/index.php?title=I2C_LCD2004&printable=yes
-4 of 10 3/31/2025, 9:10 PM
-// Move to the third row and print the string
-lcd.setCursor(0, 2);
-lcd.print(" 20 cols, 4 rows ");
-// Move to the fourth row and print the string
-lcd.setCursor(0, 3);
-lcd.print(" www.sunfounder.com "); 
+  // Set cursor to the top left corner and print the string on the first row
+  lcd.setCursor(0, 0);
+  lcd.print(" Hello, world! ");
+  // Move to the second row and print the string
+  lcd.setCursor(0, 1);
+  lcd.print("Sys Uptime: ");
+  lcd.print(g_uiGenericSecondTimer);
+  lcd.print("s");
+  // Move to the third row and print the string
+  lcd.setCursor(0, 2);
+  lcd.print("                    ");
+  // Move to the fourth row and print the string
+  lcd.setCursor(0, 3);
+  lcd.print("Light Snsr:");
+  lcd.print(g_uiAnInLightSnsr); 
 }
