@@ -1,7 +1,10 @@
 #include <LiquidCrystal_I2C.h>
 #include <Wire.h>
 
+/*********Definitions**************/
 /*** Timing Definitions ******/
+#define TIME_1MS_10MS     10
+#define TIME_CHECK_INPUTS TIME_1MS_10MS
 #define TIME_1MS_1S  1000
 #define TIME_1S_5S   5
 
@@ -11,6 +14,10 @@ LiquidCrystal_I2C lcd(0x27, 20, 4);
 /***** Global Variables ***********/
 unsigned int g_uiGenericSecondTimer = 0;    //this will keep track of the number of seconds the program has run, until an overflow occurs....
 unsigned int g_uiSendMsgTimer = 0;          //when this timer expires, send a message then reset timer
+unsigned char gucLCDLine1[20];
+unsigned char gucLCDLine2[20];
+unsigned char gucLCDLine3[20];
+unsigned char g_ucCheckInputsTimerMs = 0; // Timer used to keep track of input reading timing
 
 //*** Inputs to be read in CheckInputs() ***
 unsigned int g_uiAnInLightSnsr = 0;
@@ -28,7 +35,11 @@ Serial.begin(9600);
 void loop() {
   // put your main code here, to run repeatedly:
   UpdateTimers();
-  CheckInputs();
+  if (!g_ucCheckInputsTimerMs)  //Timer set elapsed to set inputs
+  {
+    CheckInputs();
+    g_ucCheckInputsTimerMs = TIME_CHECK_INPUTS;
+  }
   SetOutputs();
   SetLCDOutput();
    
@@ -49,6 +60,9 @@ void UpdateTimers()
   r_ulPrevMillis = ulCurMillis;
   
   r_uiMilliCounter += ulMillisUpdate;
+
+  if (g_ucCheckInputsTimerMs)
+    g_ucCheckInputsTimerMs--;
   
   while (r_uiMilliCounter >= TIME_1MS_1S)    //Update second based timers here
   {
@@ -63,6 +77,7 @@ void UpdateTimers()
 
 void CheckInputs()
 {
+    unsigned short 
     g_uiAnInLightSnsr = analogRead(0);
 }
 
