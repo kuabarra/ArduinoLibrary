@@ -1,12 +1,20 @@
+#include <LiquidCrystal.h>
 #include <LiquidCrystal_I2C.h>
 #include <Wire.h>
 
 /*********Definitions**************/
 /*** Timing Definitions ******/
-#define TIME_1MS_10MS     10
-#define TIME_CHECK_INPUTS TIME_1MS_10MS
-#define TIME_1MS_1S  1000
-#define TIME_1S_5S   5
+#define TIME_1MS_100MS    100 
+#define TIME_1MS_500MS    500
+#define TIME_1MS_1S       1000
+#define TIME_1S_5S        5
+#define TIME_CHECK_INPUTS 100//TIME_1MS_100MS
+#define TIME_REFRESH_LCD  TIME_1MS_500MS
+
+/***Input and Sampling********/
+#define NUM_ANALOG_SAMPLES  8
+#define TRUE                1
+#define FALSE               0
 
 // Initialize the LCD object, set the LCD I2C address to 0x27 for a 20x4 display
 LiquidCrystal_I2C lcd(0x27, 20, 4);
@@ -14,10 +22,11 @@ LiquidCrystal_I2C lcd(0x27, 20, 4);
 /***** Global Variables ***********/
 unsigned int g_uiGenericSecondTimer = 0;    //this will keep track of the number of seconds the program has run, until an overflow occurs....
 unsigned int g_uiSendMsgTimer = 0;          //when this timer expires, send a message then reset timer
-unsigned char gucLCDLine1[20];
-unsigned char gucLCDLine2[20];
-unsigned char gucLCDLine3[20];
-unsigned char g_ucCheckInputsTimerMs = 0; // Timer used to keep track of input reading timing
+char g_cLCDLine1[20];
+char g_cLCDLine2[20];
+char g_cLCDLine3[20];
+unsigned char g_ucCheckInputs = 0; // flag used to triggger input reads
+unsigned char g_bRefreshLCD = TRUE; //flag set in UpdateTimers() set when it's time to call SetLCDOutput()
 
 //*** Inputs to be read in CheckInputs() ***
 unsigned int g_uiAnInLightSnsr = 0;
@@ -35,13 +44,18 @@ Serial.begin(9600);
 void loop() {
   // put your main code here, to run repeatedly:
   UpdateTimers();
-  if (!g_ucCheckInputsTimerMs)  //Timer set elapsed to set inputs
+  while(g_ucCheckInputs)  //Timer set elapsed to set inputs
   {
+    g_ucCheckInputs--;
+    Serial.println("Check Inputs");
     CheckInputs();
-    g_ucCheckInputsTimerMs = TIME_CHECK_INPUTS;
+  }
+  if(g_bRefreshLCD)
+  {
+    g_bRefreshLCD = FALSE;
+    SetLCDOutput();
   }
   SetOutputs();
-  SetLCDOutput();
    
   if (!g_uiSendMsgTimer)
   { 
@@ -55,15 +69,14 @@ void UpdateTimers()
   static unsigned long r_ulPrevMillis = 0;
   unsigned long ulCurMillis = millis();
   unsigned long ulMillisUpdate = ulCurMillis - r_ulPrevMillis;
-  static unsigned int r_uiMilliCounter = 0;
+  static unsigned int r_uiMilliCounter = 0, r_uiInputReadTimer = 0, r_uiLCDRefreshTimer = 0;
   
   r_ulPrevMillis = ulCurMillis;
   
   r_uiMilliCounter += ulMillisUpdate;
 
-  if (g_ucCheckInputsTimerMs)
-    g_ucCheckInputsTimerMs--;
-  
+  Serial.println(ulMillisUpdate);
+
   while (r_uiMilliCounter >= TIME_1MS_1S)    //Update second based timers here
   {
     r_uiMilliCounter -= TIME_1MS_1S;
@@ -73,12 +86,37 @@ void UpdateTimers()
     if (g_uiSendMsgTimer)
       g_uiSendMsgTimer--;
   }
+
+  r_uiInputReadTimer += ulMillisUpdate;
+  while (r_uiInputReadTimer >= TIME_CHECK_INPUTS)    //Update input read timer
+  {
+    r_uiInputReadTimer -= TIME_CHECK_INPUTS;
+    g_ucCheckInputs++;
+  }
+
+  r_uiLCDRefreshTimer += ulMillisUpdate;
+  while (r_uiLCDRefreshTimer >= TIME_REFRESH_LCD)    //Update input read timer
+  {
+    r_uiLCDRefreshTimer -= TIME_REFRESH_LCD;
+    g_bRefreshLCD = TRUE;
+  }
 }
 
 void CheckInputs()
 {
-    unsigned short 
-    g_uiAnInLightSnsr = analogRead(0);
+    static unsigned short g_usLightSnsrTotal = 0;
+    static unsigned char g_ucAnalogSamples = NUM_ANALOG_SAMPLES;
+    
+    if (g_ucAnalogSamples--)
+    {
+      g_usLightSnsrTotal += analogRead(0);
+    }
+    else  //done samlping, get average
+    {
+      g_uiAnInLightSnsr = g_usLightSnsrTotal / NUM_ANALOG_SAMPLES;  //average the samples
+      g_usLightSnsrTotal = 0;                   //reset for next roundof sampling
+      g_ucAnalogSamples = NUM_ANALOG_SAMPLES;   //reset for next roundof sampling
+    }
 }
 
 unsigned int CalculateAnalogOut(unsigned int uiInput)
@@ -94,8 +132,9 @@ void SetOutputs()
 void SetLCDOutput()
 {
   // Set cursor to the top left corner and print the string on the first row
+  g_cLCDLine1[0] = "Hello World! ";
   lcd.setCursor(0, 0);
-  lcd.print(" Hello, world! ");
+  lcd.println(g_cLCDLine1[0]);
   // Move to the second row and print the string
   lcd.setCursor(0, 1);
   lcd.print("Sys Uptime: ");
