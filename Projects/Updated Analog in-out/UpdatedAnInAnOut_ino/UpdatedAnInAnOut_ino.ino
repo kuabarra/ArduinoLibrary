@@ -22,7 +22,7 @@ LiquidCrystal_I2C lcd(0x27, 20, 4);
 /***** Global Variables ***********/
 unsigned int g_uiGenericSecondTimer = 0;    //this will keep track of the number of seconds the program has run, until an overflow occurs....
 unsigned int g_uiSendMsgTimer = 0;          //when this timer expires, send a message then reset timer
-char g_cLCDLine1[20];
+char* g_cLCDLine1[20];// = " Hello World!! :)   ";
 char g_cLCDLine2[20];
 char g_cLCDLine3[20];
 unsigned char g_ucCheckInputs = 0; // flag used to triggger input reads
@@ -39,6 +39,7 @@ Serial.begin(9600);
   pinMode(2, INPUT_PULLUP);
   lcd.init(); // Initialize the LCD
   lcd.backlight(); // Turn on the backlight
+  g_cLCDLine1[0] = " Hello World!! :)   ";
 }
 
 void loop() {
@@ -132,7 +133,6 @@ void SetOutputs()
 void SetLCDOutput()
 {
   // Set cursor to the top left corner and print the string on the first row
-  g_cLCDLine1[0] = "Hello World! ";
   lcd.setCursor(0, 0);
   lcd.println(g_cLCDLine1[0]);
   // Move to the second row and print the string
