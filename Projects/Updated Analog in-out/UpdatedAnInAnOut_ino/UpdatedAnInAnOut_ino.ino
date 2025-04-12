@@ -52,7 +52,6 @@ void loop() {
   while(g_ucCheckInputs)  //Timer set elapsed to set inputs
   {
     g_ucCheckInputs--;
-    Serial.println("Check Inputs");
     CheckInputs();
   }
   if(g_bRefreshLCD)
